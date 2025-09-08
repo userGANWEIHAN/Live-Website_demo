@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员页面 - 顾客积分管理</title>
+    <link rel="stylesheet" href="admin.css"> <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <h1>管理员页面</h1>
+        <div class="admin-panel">
+            <h2>添加新顾客</h2>
+            <form id="addCustomerForm">
+                <input type="text" id="addName" placeholder="姓名" required>
+                <input type="text" id="addPhone" placeholder="电话号码" required>
+                <input type="number" id="addScore" placeholder="初始积分" required>
+                <button type="submit">添加顾客</button>
+            </form>
+
+            <h2>修改顾客积分</h2>
+            <form id="updateScoreForm">
+                <input type="text" id="updatePhone" placeholder="顾客电话号码" required>
+                <input type="number" id="updateScore" placeholder="新增/减少积分" required>
+                <button type="submit">更新积分</button>
+            </form>
+        </div>
+        
+        <a href="index.html" class="back-button">返回排行榜</a>
+    </div>
+    <div id="notification-container"></div>
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+// admin.js
+
+document.addEventListener('DOMContentLoaded', () => {
+    const addCustomerForm = document.getElementById('addCustomerForm');
+    const updateScoreForm = document.getElementById('updateScoreForm');
+    const notificationContainer = document.getElementById("notification-container");
+
+    // 从 localStorage 加载顾客数据
+    let customers = JSON.parse(localStorage.getItem('customers')) || [];
+
+    // 辅助函数：显示通知
+    function showNotification(message) {
+        const notification = document.createElement('div');
+        notification.classList.add('notification');
+        notification.textContent = message;
+        notificationContainer.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // 辅助函数：将数据保存到 localStorage
+    function saveCustomers() {
+        localStorage.setItem('customers', JSON.stringify(customers));
+        console.log("数据已成功保存到 localStorage。"); // 新增的日志
+    }
+
+    // 添加新顾客表单提交事件
+    if (addCustomerForm) {
+        addCustomerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('addName').value;
+            const phone = document.getElementById('addPhone').value.replace(/\D/g, ''); // 移除所有非数字字符
+            const score = parseInt(document.getElementById('addScore').value);
+
+            // 检查电话号码是否已存在
+            if (customers.some(c => c.phone.replace(/\D/g, '') === phone)) {
+                showNotification('添加失败：该电话号码已存在！');
+                return;
+            }
+
+            const newCustomer = {
+                id: customers.length > 0 ? Math.max(...customers.map(c => c.id)) + 1 : 1,
+                name: name,
+                phone: phone,
+                score: score,
+                history: [{ date: new Date().toISOString().slice(0, 10), score: score }]
+            };
+            
+            customers.push(newCustomer);
+            saveCustomers();
+            showNotification(`成功添加顾客: ${name}`);
+            addCustomerForm.reset();
+        });
+    }
+
+    // 更新顾客积分表单提交事件
+    if (updateScoreForm) {
+        updateScoreForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('updatePhone').value.replace(/\D/g, '');
+            const scoreChange = parseInt(document.getElementById('updateScore').value);
+
+            const customer = customers.find(c => c.phone.replace(/\D/g, '') === phone);
+
+            if (customer) {
+                const newScore = customer.score + scoreChange;
+                
+                // 更新积分
+                customer.score = newScore > 0 ? newScore : 0;
+                
+                // 更新历史记录
+                const today = new Date().toISOString().slice(0, 10);
+                const lastHistory = customer.history[customer.history.length - 1];
+                if (lastHistory && lastHistory.date === today) {
+                    lastHistory.score = customer.score;
+                } else {
+                    customer.history.push({ date: today, score: customer.score });
+                }
+
+                saveCustomers();
+                showNotification(`成功更新 ${customer.name} 的积分。新积分为: ${customer.score}`);
+            } else {
+                showNotification('更新失败：未找到该电话号码的顾客。');
+            }
+            updateScoreForm.reset();
+        });
+    }
+});

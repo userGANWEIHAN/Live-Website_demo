@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>顾客详情</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .details-container {
+            background-color: #fff;
+            padding: 20px 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 800px;
+            text-align: center;
+        }
+        .details-info {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        .details-info p {
+            margin: 10px 0;
+        }
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #8b0000;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+        .back-button:hover {
+            background-color: #660000;
+        }
+        /* 容器内文字颜色 */
+        .details-container, .details-info p, .details-info span {
+            color: #444;
+        }
+        /* 图表容器样式 */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px; /* 控制图表高度 */
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="customerName">顾客姓名</h1>
+
+    <div class="details-container">
+        <div class="details-info">
+            <p><strong>当前排名：</strong><span id="customerRank"></span></p>
+            <p><strong>当前积分：</strong><span id="customerScore"></span></p>
+            <p><strong>电话号码：</strong><span id="customerPhone"></span></p>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="scoreChart"></canvas>
+        </div>
+    </div>
+
+    <a href="index.html" class="back-button">返回排行榜</a>
+
+    <script>
+        // 顾客数据，请确保这里的数据结构与 index.html 中的 customers 数据一致
+        const customers = [
+            { name: "顾客A", score: 250, phone: "0123456789", previousRank: 0, scoreHistory: [{score: 250, change: 250, time: "2025/1/1 上午10:00:00"}] },
+            { name: "顾客B", score: 180, phone: "0131234567", previousRank: 0, scoreHistory: [{score: 180, change: 180, time: "2025/1/1 上午10:05:00"}] },
+            { name: "顾客C", score: 120, phone: "0142345678", previousRank: 0, scoreHistory: [{score: 120, change: 120, time: "2025/1/1 上午10:10:00"}] },
+            { name: "顾客D", score: 100, phone: "0169876543", previousRank: 0, scoreHistory: [{score: 100, change: 100, time: "2025/1/1 上午10:15:00"}] },
+            { name: "顾客E", score: 95, phone: "0176543210", previousRank: 0, scoreHistory: [{score: 95, change: 95, time: "2025/1/1 上午10:20:00"}] },
+            { name: "顾客F", score: 88, phone: "0180123456", previousRank: 0, scoreHistory: [{score: 88, change: 88, time: "2025/1/1 上午10:25:00"}] },
+            { name: "顾客G", score: 75, phone: "0192233445", previousRank: 0, scoreHistory: [{score: 75, change: 75, time: "2025/1/1 上午10:30:00"}] },
+            { name: "顾客H", score: 60, phone: "0112345678", previousRank: 0, scoreHistory: [{score: 60, change: 60, time: "2025/1/1 上午10:35:00"}] },
+            { name: "顾客I", score: 55, phone: "0100112233", previousRank: 0, scoreHistory: [{score: 55, change: 55, time: "2025/1/1 上午10:40:00"}] },
+            { name: "顾客J", score: 50, phone: "0159988776", previousRank: 0, scoreHistory: [{score: 50, change: 50, time: "2025/1/1 上午10:45:00"}] },
+            { name: "顾客K", score: 45, phone: "0171122334", previousRank: 0, scoreHistory: [{score: 45, change: 45, time: "2025/1/1 上午10:50:00"}] },
+            { name: "顾客L", score: 40, phone: "0182233445", previousRank: 0, scoreHistory: [{score: 40, change: 40, time: "2025/1/1 上午10:55:00"}] },
+            { name: "顾客M", score: 35, phone: "0193344556", previousRank: 0, scoreHistory: [{score: 35, change: 35, time: "2025/1/1 上午11:00:00"}] },
+            { name: "顾客N", score: 30, phone: "0114455667", previousRank: 0, scoreHistory: [{score: 30, change: 30, time: "2025/1/1 上午11:05:00"}] },
+            { name: "顾客O", score: 25, phone: "0125566778", previousRank: 0, scoreHistory: [{score: 25, change: 25, time: "2025/1/1 上午11:10:00"}] }
+        ];
+
+        // 新增的电话号码格式化函数
+        function formatPhoneNumber(fullPhoneNumber) {
+            if (fullPhoneNumber && fullPhoneNumber.length >= 4) {
+                const lastFourDigits = fullPhoneNumber.slice(-4);
+                return `*****${lastFourDigits}`;
+            }
+            return fullPhoneNumber;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const customerName = params.get('name');
+
+            const customer = customers.find(c => c.name === customerName);
+            
+            const sortedCustomers = [...customers].sort((a, b) => b.score - a.score);
+            const rank = sortedCustomers.findIndex(c => c.name === customerName) + 1;
+
+            if (customer) {
+                document.getElementById('customerName').textContent = customer.name;
+                document.getElementById('customerRank').textContent = rank;
+                document.getElementById('customerScore').textContent = customer.score;
+                
+                // 使用格式化函数显示电话号码
+                document.getElementById('customerPhone').textContent = formatPhoneNumber(customer.phone);
+
+                renderScoreChart(customer.scoreHistory);
+
+            } else {
+                document.getElementById('customerName').textContent = '顾客未找到';
+                document.getElementById('customerRank').textContent = 'N/A';
+                document.getElementById('customerScore').textContent = 'N/A';
+                document.getElementById('customerPhone').textContent = 'N/A';
+            }
+        });
+
+        // 绘制积分图表的函数
+        function renderScoreChart(history) {
+            const labels = history.map(record => record.time);
+            const data = history.map(record => record.score);
+            
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '积分变化趋势',
+                        data: data,
+                        borderColor: '#8b0000',
+                        backgroundColor: 'rgba(139, 0, 0, 0.2)',
+                        tension: 0.1,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#8b0000',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#444'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return '时间: ' + context[0].label;
+                                },
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + ' 积分';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '积分',
+                                color: '#444'
+                            },
+                            ticks: {
+                                color: '#444'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '积分更新时间',
+                                color: '#444'
+                            },
+                            ticks: {
+                                color: '#444'
+                            },
+                             grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
